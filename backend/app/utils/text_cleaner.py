@@ -1,15 +1,49 @@
 import re
 
 
+def fix_spaced_words(text: str):
+
+    pattern = r'\b(?:[A-ZÀ-Úa-zà-ú]\s+){2,}[A-ZÀ-Úa-zà-ú]\b'
+
+    matches = re.findall(pattern, text)
+
+    for match in matches:
+
+        corrected = match.replace(" ", "")
+
+        text = text.replace(match, corrected)
+
+    return text
+
+
+def restore_sentence_spacing(text: str):
+
+    # separa palavras coladas por maiúsculas
+    text = re.sub(
+        r'([a-zà-ú])([A-ZÀ-Ú])',
+        r'\1 \2',
+        text
+    )
+
+    # separa palavras longas coladas
+    text = re.sub(
+        r'(?<=[a-zà-ú])(?=[A-ZÀ-Ú][a-zà-ú])',
+        ' ',
+        text
+    )
+
+    return text
+
+
 def clean_text(text: str):
 
-    # Remove espaços excessivos
-    text = re.sub(r"\s+", " ", text)
+    # Corrige palavras espaçadas
+    text = fix_spaced_words(text)
 
-    # Corrige palavras separadas letra por letra
-    text = re.sub(r"(\b\w\s){3,}\w\b", lambda m: m.group().replace(" ", ""), text)
+    # Restaura espaços entre palavras coladas
+    text = restore_sentence_spacing(text)
 
-    # Remove espaços duplicados novamente
+    # Remove múltiplos espaços
     text = re.sub(r"\s+", " ", text)
 
     return text.strip()

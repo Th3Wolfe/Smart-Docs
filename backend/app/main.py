@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File
 from app.services.ollama_service import generate_response
 from app.services.document_service import extract_text
+from app.services.chunk_service import create_chunks
 
 import shutil
 from pathlib import Path
@@ -41,7 +42,10 @@ async def upload_document(file: UploadFile = File(...)):
 
     extracted_text = extract_text(str(file_path))
 
+    chunks = create_chunks(extracted_text)
+
     return {
         "filename": file.filename,
-        "text_preview": extracted_text[:1000]
+        "total_chunks": len(chunks),
+        "first_chunk": chunks[0]
     }
