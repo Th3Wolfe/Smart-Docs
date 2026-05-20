@@ -59,6 +59,7 @@ Usuário → FastAPI → Pipeline RAG → ChromaDB (busca vetorial) → Ollama (
 
 # 📁 Estrutura do projeto
 
+```txt
 smartdocs/
 ├── backend/
 │   ├── app/
@@ -66,8 +67,10 @@ smartdocs/
 │   │   ├── uploads/
 │   │   ├── chroma_db/
 │   │   └── main.py
+│   │
 │   ├── requirements.txt
 │   └── .env
+│
 ├── frontend/ (futuro)
 ├── docs/
 ├── scripts/
