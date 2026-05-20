@@ -59,7 +59,6 @@ Usuário → FastAPI → Pipeline RAG → ChromaDB (busca vetorial) → Ollama (
 
 # 📁 Estrutura do projeto
 
-```txt
 smartdocs/
 ├── backend/
 │   ├── app/
@@ -103,8 +102,7 @@ smartdocs/
 
 # ⚙️ IA local (Ollama)
 
-Instalar Ollama:
-https://ollama.com
+Instalar Ollama: https://ollama.com
 
 Modelo principal:
 ollama pull qwen3:8b
