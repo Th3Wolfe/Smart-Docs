@@ -1,10 +1,15 @@
 from fastapi import FastAPI, UploadFile, File
+import shutil
+from pathlib import Path
 from app.services.ollama_service import generate_response
 from app.services.document_service import extract_text
 from app.services.chunk_service import create_chunks
+from app.services.retrieval_service import search_similar_chunks
+from app.services.vector_store import add_chunks
+from app.services.vector_store import collection
 
-import shutil
-from pathlib import Path
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
 
 app = FastAPI(
     title="SmartDocs API",
@@ -40,12 +45,56 @@ async def upload_document(file: UploadFile = File(...)):
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
+    # 1. extrair texto
     extracted_text = extract_text(str(file_path))
 
+    # 2. criar chunks
     chunks = create_chunks(extracted_text)
+
+    # 3. salvar no ChromaDB (FALTAVA ISSO)
+    document_id = file.filename
+    add_chunks(document_id, chunks)
 
     return {
         "filename": file.filename,
         "total_chunks": len(chunks),
-        "first_chunk": chunks[0]
+        "status": "indexado no ChromaDB com sucesso"
+    }
+
+@app.get("/ask")
+def ask(query: str):
+
+    chunks = search_similar_chunks(query)
+
+    context = "\n\n".join(chunks)
+
+    prompt = f"""
+Você é um assistente que responde com base em documentos.
+
+Contexto:
+{context}
+
+Pergunta:
+{query}
+
+Responda de forma clara e objetiva.
+"""
+
+    response = generate_response(prompt)
+
+    return {
+        "query": query,
+        "answer": response,
+        "context_used": chunks
+    }
+
+@app.get("/debug/chroma")
+def debug_chroma():
+
+    data = collection.get()
+
+    return {
+        "total_ids": len(data["ids"]) if data["ids"] else 0,
+        "ids": data["ids"],
+        "documents_preview": data["documents"][:3] if data["documents"] else []
     }
