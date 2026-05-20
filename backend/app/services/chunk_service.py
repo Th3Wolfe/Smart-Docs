@@ -1,21 +1,23 @@
-def create_chunks(
-    text: str,
-    chunk_size: int = 500,
-    overlap: int = 100
-):
+import re
+
+def create_chunks(text: str, chunk_size: int = 800):
+
+    # normaliza espaços
+    text = re.sub(r'\s+', ' ', text).strip()
+
+    sentences = re.split(r'(?<=[.!?]) +', text)
 
     chunks = []
+    current = ""
 
-    start = 0
+    for s in sentences:
+        if len(current) + len(s) < chunk_size:
+            current += " " + s
+        else:
+            chunks.append(current.strip())
+            current = s
 
-    while start < len(text):
-
-        end = start + chunk_size
-
-        chunk = text[start:end]
-
-        chunks.append(chunk)
-
-        start += chunk_size - overlap
+    if current:
+        chunks.append(current.strip())
 
     return chunks

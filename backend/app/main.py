@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File
 import shutil
 from pathlib import Path
+from typing import Optional
 from app.services.ollama_service import generate_response
 from app.services.document_service import extract_text
 from app.services.chunk_service import create_chunks
@@ -45,31 +46,34 @@ async def upload_document(file: UploadFile = File(...)):
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # 1. extrair texto
     extracted_text = extract_text(str(file_path))
-
-    # 2. criar chunks
     chunks = create_chunks(extracted_text)
 
-    # 3. salvar no ChromaDB (FALTAVA ISSO)
-    document_id = file.filename
+    document_id = file.filename  # (ou uuid depois)
+
     add_chunks(document_id, chunks)
 
     return {
         "filename": file.filename,
+        "document_id": document_id,
         "total_chunks": len(chunks),
         "status": "indexado no ChromaDB com sucesso"
     }
 
 @app.get("/ask")
-def ask(query: str):
-
-    chunks = search_similar_chunks(query)
+def ask(query: str, document_id: str = None):
+    
+    if document_id:
+        chunks = search_similar_chunks(query, document_id)
+    else:
+        chunks = search_similar_chunks(query, None)
 
     context = "\n\n".join(chunks)
 
     prompt = f"""
-Você é um assistente que responde com base em documentos.
+Você é um assistente que responde SOMENTE com base no contexto abaixo.
+
+Se não tiver informação no contexto, diga que não encontrou.
 
 Contexto:
 {context}
@@ -88,13 +92,20 @@ Responda de forma clara e objetiva.
         "context_used": chunks
     }
 
-@app.get("/debug/chroma")
-def debug_chroma():
+@app.get("/documents")
+def list_documents():
 
     data = collection.get()
 
+    if not data["metadatas"]:
+        return {"documents": []}
+
+    documents = list({
+        meta["document_id"]
+        for meta in data["metadatas"]
+        if "document_id" in meta
+    })
+
     return {
-        "total_ids": len(data["ids"]) if data["ids"] else 0,
-        "ids": data["ids"],
-        "documents_preview": data["documents"][:3] if data["documents"] else []
+        "documents": documents
     }

@@ -18,5 +18,8 @@ def add_chunks(document_id: str, chunks: list):
             ids=[f"{document_id}_{i}"],
             embeddings=[embedding],
             documents=[chunk],
-            metadatas=[{"document_id": document_id}]
+            metadatas=[{
+                "document_id": document_id,
+                "chunk_index": i
+            }]
         )
